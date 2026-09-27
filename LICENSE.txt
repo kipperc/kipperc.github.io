@@ -1,0 +1,5 @@
+SNOWBOUND
+Copyright 2026.
+
+This project is an original SkiFree-style game implementation using programmatic artwork.
+It is not affiliated with or endorsed by Microsoft.

@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>Snowbound — Ski Free Style</title>
+  <link rel="icon" href="assets/favicon.svg">
+  <link rel="stylesheet" href="src/style.css">
+</head>
+<body>
+  <main id="game-shell">
+    <canvas id="game" aria-label="Snowbound ski game"></canvas>
+
+    <section id="hud">
+      <div class="hud-box">
+        <span>DISTANCE</span><strong id="distance">0 m</strong>
+      </div>
+      <div class="hud-box">
+        <span>SCORE</span><strong id="score">0</strong>
+      </div>
+      <div class="hud-box">
+        <span>SPEED</span><strong id="speed">0</strong>
+      </div>
+    </section>
+
+    <section id="overlay" class="visible">
+      <div class="panel">
+        <div class="title">SNOWBOUND</div>
+        <div class="subtitle">an old-school downhill game</div>
+        <p>Steer downhill, dodge obstacles, hit ramps, and see how far you can get.</p>
+        <div class="controls">
+          <span>← →</span> steer
+          <span>↑</span> tuck / accelerate
+          <span>↓</span> brake
+          <span>SPACE</span> jump
+        </div>
+        <button id="start">START RUN</button>
+        <div class="small">Best: <span id="best">0</span> m</div>
+      </div>
+    </section>
+
+    <section id="pause-overlay">
+      <div class="panel">
+        <div class="title small-title">PAUSED</div>
+        <p>Press P or Escape to continue.</p>
+      </div>
+    </section>
+
+    <section id="gameover-overlay">
+      <div class="panel">
+        <div class="title small-title">WIPEOUT</div>
+        <p id="gameover-reason">The mountain wins this round.</p>
+        <div class="results">
+          <div><span>Distance</span><strong id="final-distance">0 m</strong></div>
+          <div><span>Score</span><strong id="final-score">0</strong></div>
+        </div>
+        <button id="restart">SKI AGAIN</button>
+        <div class="small">Best: <span id="best-gameover">0</span> m</div>
+      </div>
+    </section>
+
+    <div id="touch-controls" aria-hidden="true">
+      <button data-key="left">◀</button>
+      <button data-key="jump">●</button>
+      <button data-key="right">▶</button>
+    </div>
+  </main>
+  <script src="src/game.js"></script>
+</body>
+</html>
