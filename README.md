@@ -21,7 +21,7 @@ Then visit `http://localhost:8080/`.
 - Left / Right or A / D — steer
 - Up / W — tuck / accelerate
 - Down / S — brake
-- Space — jump
+- Space — jump/try again
 - P / Escape — pause
 
 Touch controls appear automatically on touch devices.
