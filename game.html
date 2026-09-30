@@ -1,0 +1,1141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Draconic Extinction</title>
+<style>
+:root{--bg:#10131a;--panel:#191e29;--panel2:#222938;--text:#eef2f7;--muted:#9ca8ba;--gold:#e7c35a;--green:#62d68b;--red:#e56b6f;--blue:#62a9e8;--border:#343d4e}
+*{box-sizing:border-box} body{margin:0;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);background:radial-gradient(circle at top,#20293a,#0e1117 70%);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+button,select{font:inherit} button{cursor:pointer;border:1px solid var(--border);background:#293244;color:var(--text);padding:9px 12px;border-radius:7px}button:hover:not(:disabled){background:#354157}button:disabled{opacity:.45;cursor:not-allowed}
+#app{max-width:1500px;margin:auto;padding:18px}.title{display:flex;justify-content:space-between;align-items:end;gap:12px;margin-bottom:12px}.title h1{margin:0;font-size:27px}.title small{color:var(--muted)}
+.layout{display:grid;grid-template-columns:minmax(700px,1fr) 340px;gap:14px}.panel{background:rgba(25,30,41,.96);border:1px solid var(--border);border-radius:10px;box-shadow:0 10px 30px #0004}.game{padding:14px}.side{padding:16px}
+canvas{display:block;background:#17221a;border-radius:7px;image-rendering:pixelated;border:1px solid #303b32}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}.stat{background:var(--panel2);padding:9px;border-radius:7px}.bar{height:8px;background:#0e1218;border-radius:5px;overflow:hidden;margin-top:5px}.fill{height:100%;transition:width .2s}.hp{background:var(--red)}.xp{background:var(--gold)}
+.row{display:flex;gap:8px;flex-wrap:wrap}.tabs{display:flex;gap:6px;margin:10px 0}.tabs button.active{outline:2px solid var(--gold)}
+h2,h3{margin:8px 0}.muted{color:var(--muted)}.gold{color:var(--gold)}.good{color:var(--green)}.danger{color:var(--red)}
+#log{height:210px;overflow:auto;background:#0e1218;border-radius:7px;padding:10px;font-family:ui-monospace,monospace;font-size:12px;line-height:1.5}
+.log-good{color:var(--green)}.log-bad{color:var(--red)}.log-gold{color:var(--gold)}
+.card{background:var(--panel2);padding:10px;border-radius:8px;margin:8px 0}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.overlay{position:fixed;inset:0;background:#07090ddd;display:flex;align-items:center;justify-content:center;padding:18px;z-index:10}.modal{width:min(900px,100%);max-height:92dvh;overflow:auto;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:18px}.choice{border:1px solid var(--border);background:var(--panel2);padding:13px;border-radius:9px;text-align:left}.choice.selected{outline:2px solid var(--gold)}.choice strong{display:block;margin-bottom:4px}
+kbd{background:#0d1118;border:1px solid #3a4352;padding:2px 6px;border-radius:4px}.footer{color:var(--muted);font-size:12px;margin-top:10px}
+
+/* Strict viewport-fit responsive layout */
+html,body{width:100%;height:100%;margin:0;overflow:hidden}
+body{
+  min-height:100dvh;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  background:radial-gradient(circle at top,#20293a,#0e1117 70%);
+  overscroll-behavior:none;
+}
+#app{
+  width:100%;
+  height:100dvh;
+  max-width:none;
+  padding:clamp(4px,1vw,12px);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+.title{
+  flex:0 0 auto;
+  min-height:34px;
+  margin-bottom:clamp(4px,0.8vh,8px);
+}
+.title h1{font-size:clamp(17px,2.3vw,26px)}
+.title small{font-size:clamp(10px,1vw,13px)}
+.title>div:last-child{font-size:clamp(10px,1vw,13px)}
+.layout{
+  flex:1 1 0;
+  min-height:0;
+  width:100%;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(225px,300px);
+  gap:clamp(5px,0.8vw,10px);
+  overflow:hidden;
+}
+.panel{
+  min-height:0;
+  min-width:0;
+}
+.game{
+  padding:clamp(5px,0.8vw,10px);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+.viewport{
+  flex:1 1 0;
+  min-height:0;
+  min-width:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  background:#0d1210;
+  border-radius:7px;
+}
+#world{
+  display:block;
+  width:auto;
+  height:auto;
+  max-width:100%;
+  max-height:100%;
+  aspect-ratio:3/2;
+  object-fit:contain;
+  image-rendering:pixelated;
+}
+.stats{
+  flex:0 0 auto;
+  margin-bottom:clamp(4px,0.6vh,7px);
+  gap:clamp(4px,0.5vw,7px);
+}
+.stat{
+  padding:clamp(5px,0.6vh,8px);
+  font-size:clamp(11px,0.9vw,14px);
+}
+.bar{height:7px}
+.tabs{
+  flex:0 0 auto;
+  margin:clamp(4px,0.6vh,7px) 0;
+  gap:4px;
+}
+.tabs button{
+  padding:clamp(5px,0.7vh,8px) clamp(7px,0.7vw,11px);
+  font-size:clamp(11px,0.9vw,14px);
+}
+#actions{
+  flex:0 0 auto;
+  min-height:0;
+}
+#actions .row{gap:4px}
+#actions button{
+  padding:clamp(5px,0.6vh,8px) clamp(7px,0.6vw,10px);
+  font-size:clamp(10px,0.8vw,13px);
+}
+#log{
+  flex:0 0 clamp(70px,11vh,135px);
+  height:auto;
+  min-height:55px;
+  overflow:hidden;
+  font-size:clamp(9px,0.75vw,12px);
+  padding:clamp(5px,0.6vw,9px);
+}
+.footer{
+  flex:0 0 auto;
+  margin-top:clamp(3px,0.5vh,6px);
+  font-size:clamp(8px,0.65vw,11px);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.side{
+  min-height:0;
+  max-height:none;
+  overflow:hidden;
+  padding:clamp(8px,0.8vw,12px);
+}
+.side .card{
+  margin:clamp(4px,0.5vh,7px) 0;
+  padding:clamp(6px,0.5vh,9px);
+  font-size:clamp(10px,0.8vw,13px);
+}
+.side h2{font-size:clamp(15px,1.4vw,20px)}
+.side h3{font-size:clamp(12px,1vw,15px)}
+.overlay{
+  overflow:hidden;
+  padding:8px;
+}
+.modal{
+  width:min(900px,100%);
+  max-height:calc(100dvh - 16px);
+  overflow:hidden;
+  padding:clamp(10px,1vw,18px);
+}
+
+
+
+
+/* Enhanced desktop presentation */
+.viewport{
+  background:#14251b;
+  border:2px solid #493b2b;
+  box-shadow:inset 0 0 30px #0008,0 4px 18px #0008;
+}
+#world{image-rendering:pixelated;}
+
+
+.gear-card{border-left:4px solid #b99152}
+.gear-card button,.card button{margin-top:5px}
+#side .card{line-height:1.35}
+
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="title"><div><h1>Draconic Extinction</h1><small>Rise. Hunt. End the Last Dragon.</small></div><div class="gold">Dragons slain: <b id="dragonKills">0</b> · Legacy points: <b id="legacy">0</b></div></div>
+  <div class="layout">
+    <main class="panel game">
+      <div class="stats">
+        <div class="stat"><b id="nameLabel">Adventurer</b><div class="muted" id="raceClass">—</div><div>HP <span id="hpText"></span></div><div class="bar"><div id="hpBar" class="fill hp"></div></div></div>
+        <div class="stat"><b id="levelText">Level 1</b><div class="muted" id="xpText"></div><div>XP</div><div class="bar"><div id="xpBar" class="fill xp"></div></div></div>
+      </div>
+      <div class="viewport"><canvas id="world" width="900" height="600"></canvas></div>
+      <div class="tabs">
+        <button id="exploreBtn" class="active">Explore</button><button id="characterBtn">Character</button><button id="inventoryBtn">Inventory</button>
+      </div>
+      <div id="actions"></div><div class="muted" style="margin-top:6px">Leveling increases your attributes and fully restores HP and Mana.</div>
+      <h3>Adventure Log</h3><div id="log"></div>
+      <div class="footer">Move with <kbd>WASD</kbd>/<kbd>Arrow keys</kbd>. Walk into enemies to fight. Visit the village to heal. Explore the vast wilderness, gather loot, and find the Dragon fortress far to the northeast.</div>
+    </main>
+    <aside class="panel side">
+      <h2 id="sideTitle">Character</h2><div id="side"></div>
+    </aside>
+  </div>
+</div>
+<div id="creator" class="overlay">
+  <div class="modal">
+    <h2>Begin a New Cycle</h2>
+    <p class="muted">Choose a race and class. Your choices determine your starting stats. Your legacy points and Dragon kill total carry across cycles.</p>
+    <div class="grid2" id="raceChoices"></div>
+    <h3>Class</h3><div class="grid2" id="classChoices"></div>
+    <h3>Name</h3><input id="nameInput" value="Adventurer" maxlength="18" style="width:100%;padding:10px;background:#0e1218;color:white;border:1px solid var(--border);border-radius:7px">
+    <p id="preview" class="card"></p>
+    <button id="startBtn" style="width:100%;font-size:16px">Enter the Realm</button>
+  </div>
+</div>
+
+<script>
+const W=100,H=75,T=40,canvas=document.getElementById('world'),ctx=canvas.getContext('2d');
+ctx.imageSmoothingEnabled=false;
+const races={
+ Human:{desc:"Balanced and adaptable.",stats:{str:2,agi:2,int:2,vit:2,luck:2}},
+ Elf:{desc:"Quick and magically gifted.",stats:{str:0,agi:4,int:3,vit:0,luck:3}},
+ Dwarf:{desc:"Tough, strong, and stubborn.",stats:{str:4,agi:0,int:0,vit:5,luck:1}},
+ Orc:{desc:"Ferocious and powerful.",stats:{str:6,agi:1,int:-1,vit:3,luck:0}},
+ Halfling:{desc:"Small, nimble, and lucky.",stats:{str:0,agi:5,int:1,vit:1,luck:5}}
+};
+const classes={
+ Warrior:{desc:"Heavy melee fighter.",stats:{str:5,agi:0,int:0,vit:4,luck:1},skill:"Power Strike"},
+ Ranger:{desc:"Fast skirmisher.",stats:{str:2,agi:5,int:0,vit:1,luck:2},skill:"Precise Shot"},
+ Mage:{desc:"Devastating spellcaster.",stats:{str:0,agi:1,int:7,vit:0,luck:2},skill:"Firebolt"},
+ Cleric:{desc:"Healer and fighter.",stats:{str:2,agi:1,int:4,vit:5,luck:1},skill:"Holy Light"},
+ Rogue:{desc:"Critical-hit specialist.",stats:{str:3,agi:6,int:1,vit:0,luck:4},skill:"Backstab"}
+};
+const enemyDefs={
+ Wolf:{hp:28,atk:7,def:2,xp:12,gold:8},
+ Goblin:{hp:40,atk:9,def:3,xp:18,gold:12},
+ Skeleton:{hp:58,atk:12,def:5,xp:27,gold:18},
+ Orc:{hp:80,atk:15,def:7,xp:40,gold:25},
+ Troll:{hp:125,atk:20,def:9,xp:65,gold:38},
+ Dragon:{hp:850,atk:39,def:16,xp:750,gold:1000,boss:true}
+};
+const gearDefs=[
+ {name:"Rusty Shortsword",slot:"weapon",power:2,level:1,rarity:"Common"},
+ {name:"Iron Sword",slot:"weapon",power:5,level:2,rarity:"Common"},
+ {name:"Knight's Longsword",slot:"weapon",power:9,level:4,rarity:"Rare"},
+ {name:"Moonlit Bow",slot:"weapon",power:8,level:4,rarity:"Rare"},
+ {name:"Apprentice Staff",slot:"weapon",power:7,level:3,rarity:"Rare"},
+ {name:"Leather Armor",slot:"armor",power:2,level:1,rarity:"Common"},
+ {name:"Chainmail",slot:"armor",power:5,level:2,rarity:"Common"},
+ {name:"Knight Plate",slot:"armor",power:9,level:5,rarity:"Rare"},
+ {name:"Forestwarden Mail",slot:"armor",power:8,level:4,rarity:"Rare"},
+ {name:"Iron Helm",slot:"helmet",power:2,level:2,rarity:"Common"},
+ {name:"Knight Helm",slot:"helmet",power:4,level:4,rarity:"Rare"},
+ {name:"Ring of Luck",slot:"ring",power:2,level:3,rarity:"Rare"}
+];
+const quests=[
+ {id:"wolves",name:"A Wolf Problem",desc:"Defeat 5 wolves.",need:5,reward:60,gold:50,type:"kill",target:"Wolf"},
+ {id:"goblins",name:"Green Menace",desc:"Defeat 7 goblins.",need:7,reward:100,gold:75,type:"kill",target:"Goblin"},
+ {id:"skeletons",name:"Restless Dead",desc:"Defeat 5 skeletons.",need:5,reward:150,gold:100,type:"kill",target:"Skeleton"},
+ {id:"ore",name:"Forge Supplies",desc:"Bring 3 iron ore to the blacksmith.",need:3,reward:120,gold:90,type:"item",target:"Iron Ore"}
+];
+let selectedRace='Human',selectedClass='Warrior',game=null,mode='explore',activeTab='character';
+
+function $(id){return document.getElementById(id)}
+function rand(a,b){return Math.floor(Math.random()*(b-a+1))+a}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+function dist(a,b){return Math.abs(a.x-b.x)+Math.abs(a.y-b.y)}
+function log(msg,type=''){const d=document.createElement('div');d.className=type?'log-'+type:'';d.textContent=msg;$('log').appendChild(d);$('log').scrollTop=$('log').scrollHeight}
+function meta(){try{return JSON.parse(localStorage.getItem('dragonRealmMeta'))||{kills:0,legacy:0,achievements:[]}}catch{return {kills:0,legacy:0,achievements:[]}}}
+function save(){if(game)localStorage.setItem('dragonRealmSave',JSON.stringify(game))}
+function normalizeGame(g){
+ if(!g||!g.player||!g.world||!Array.isArray(g.world.map))return null;
+ // Reject old/test worlds. Persistent Dragon Legacy is stored separately.
+ if(g.world.version!==3)return null;
+ if(g.world.map.length!==H||!g.world.map.every(row=>Array.isArray(row)&&row.length===W))return null;
+ const p=g.player;
+ if(!Number.isFinite(p.x)||!Number.isFinite(p.y)||p.x<0||p.x>=W||p.y<0||p.y>=H)return null;
+ p.equipment=p.equipment||{weapon:null,armor:null,helmet:null,ring:null};
+ p._baseLuck=typeof p._baseLuck==='number'?p._baseLuck:(p.stats?.luck||1);
+ p.inventory=p.inventory||{potions:Math.max(0,p.potions||0),gear:[],materials:[]};
+ p.inventory.gear=Array.isArray(p.inventory.gear)?p.inventory.gear:[];
+ p.inventory.materials=Array.isArray(p.inventory.materials)?p.inventory.materials:[];
+ if(p.potions>0&&p.inventory.potions===0)p.inventory.potions=p.potions;
+ p.potions=Math.max(0,p.inventory.potions||0);
+ if(typeof p.weapon!=="number")p.weapon=p.equipment.weapon?.power||0;
+ if(typeof p.armor!=="number")p.armor=p.equipment.armor?.power||0;
+ g.shop=g.shop||{open:false,mode:'buy'};
+ return g;
+}
+function load(){
+ try{
+  const raw=localStorage.getItem('dragonRealmSave');
+  return raw?normalizeGame(JSON.parse(raw)):null;
+ }catch{return null}
+}
+function discardBrokenRun(){
+ const m=meta();
+ localStorage.removeItem('dragonRealmSave');
+ localStorage.setItem('dragonRealmMeta',JSON.stringify(m));
+ game=null;mode='explore';selectedRace='Human';selectedClass='Warrior';
+ buildChoices();updatePreview();$('creator').style.display='flex';
+ $('dragonKills').textContent=m.kills||0;$('legacy').textContent=m.legacy||0;
+ $('log').innerHTML='';
+ log('The old run was invalid and has been reset. Dragon Legacy was preserved.','good');
+}
+function combinedStats(r,c){
+ let s={str:1,agi:1,int:1,vit:1,luck:1};for(const k in s)s[k]+=races[r].stats[k]+classes[c].stats[k];return s;
+}
+function xpNeeded(l){return 70+l*60}
+
+function buildChoices(){
+ $('raceChoices').innerHTML=Object.entries(races).map(([n,r])=>`<button class="choice ${n===selectedRace?'selected':''}" data-race="${n}"><strong>${n}</strong>${r.desc}<br><span class="muted">STR ${r.stats.str} · AGI ${r.stats.agi} · INT ${r.stats.int} · VIT ${r.stats.vit} · LCK ${r.stats.luck}</span></button>`).join('');
+ $('classChoices').innerHTML=Object.entries(classes).map(([n,c])=>`<button class="choice ${n===selectedClass?'selected':''}" data-class="${n}"><strong>${n}</strong>${c.desc}<br><span class="muted">STR ${c.stats.str} · AGI ${c.stats.agi} · INT ${c.stats.int} · VIT ${c.stats.vit} · LCK ${c.stats.luck}</span></button>`).join('');
+ document.querySelectorAll('[data-race]').forEach(b=>b.onclick=()=>{selectedRace=b.dataset.race;buildChoices();updatePreview()});
+ document.querySelectorAll('[data-class]').forEach(b=>b.onclick=()=>{selectedClass=b.dataset.class;buildChoices();updatePreview()});
+}
+function updatePreview(){
+ const s=combinedStats(selectedRace,selectedClass);
+ $('preview').innerHTML=`<b>${selectedRace} ${selectedClass}</b><br>HP ${100+s.vit*8} · Mana ${20+s.int*4} · Damage ${8+s.str*2} · Defense ${Math.floor(s.vit/2)} · Crit ${Math.min(50,5+s.luck*2)}%`;
+}
+
+function makeMap(){
+ const m=Array.from({length:H},()=>Array(W).fill(0));
+ // Tile types:
+ // 0 grass, 1 forest, 2 water, 3 road, 4 village/building,
+ // 5 fortress, 6 dungeon, 7 mountain, 8 bridge
+
+ const inBounds=(x,y)=>x>1&&y>1&&x<W-2&&y<H-2;
+ const paintBlob=(cx,cy,rx,ry,t)=>{
+   for(let y=Math.max(0,cy-ry);y<=Math.min(H-1,cy+ry);y++){
+     for(let x=Math.max(0,cx-rx);x<=Math.min(W-1,cx+rx);x++){
+       const dx=(x-cx)/rx,dy=(y-cy)/ry;
+       if(dx*dx+dy*dy < .9 + Math.random()*.16)m[y][x]=t;
+     }
+   }
+ };
+ const river=(points,width=2)=>{
+   for(let i=0;i<points.length-1;i++){
+     const a=points[i],b=points[i+1],steps=Math.max(Math.abs(b.x-a.x),Math.abs(b.y-a.y))*2+1;
+     for(let s=0;s<=steps;s++){
+       const q=s/steps,x=Math.round(a.x+(b.x-a.x)*q),y=Math.round(a.y+(b.y-a.y)*q);
+       for(let yy=-width;yy<=width;yy++)for(let xx=-width;xx<=width;xx++){
+         if(xx*xx+yy*yy<=width*width+1 && inBounds(x+xx,y+yy))m[y+yy][x+xx]=2;
+       }
+     }
+   }
+ };
+
+ // Large natural lakes instead of scattered water tiles.
+ paintBlob(24,18,10,7,2);
+ paintBlob(70,58,13,8,2);
+ paintBlob(48,31,6,4,2);
+
+ // A winding river crossing the world north-to-south.
+ river([
+   {x:55,y:0},{x:53,y:8},{x:57,y:17},{x:54,y:27},
+   {x:58,y:37},{x:55,y:47},{x:60,y:58},{x:66,y:68},{x:69,y:74}
+ ],1);
+
+ // Another river feeds the western lake and continues east.
+ river([
+   {x:0,y:24},{x:10,y:22},{x:20,y:20},{x:30,y:22},
+   {x:40,y:25},{x:48,y:30},{x:58,y:34},{x:70,y:37},{x:82,y:39},{x:99,y:38}
+ ],1);
+
+ // Mountain ranges form natural borders and landmarks.
+ for(const b of [
+   [8,7,5,4],[17,9,5,3],[31,5,7,4],[40,10,5,4],
+   [77,25,6,4],[82,48,6,5],[36,61,7,5],[18,66,5,4]
+ ]) paintBlob(b[0],b[1],b[2],b[3],7);
+
+ // Forests in broad, irregular woodland patches.
+ for(const b of [
+   [8,31,8,9],[30,18,10,8],[39,42,10,8],[76,16,9,8],
+   [87,31,9,10],[15,52,10,9],[48,67,10,6],[92,61,7,8]
+ ]) paintBlob(b[0],b[1],b[2],b[3],1);
+
+ // A few open grass clearings break up the forests.
+ paintBlob(29,42,5,4,0);
+ paintBlob(67,24,5,4,0);
+ paintBlob(91,45,5,4,0);
+
+ // Roads follow the terrain and connect the important locations.
+ const roadH=(y,x1=0,x2=W-1)=>{
+   for(let x=x1;x<=x2;x++)if(m[y][x]!==7)m[y][x]=3;
+ };
+ const roadV=(x,y1=0,y2=H-1)=>{
+   for(let y=y1;y<=y2;y++)if(m[y][x]!==7)m[y][x]=3;
+ };
+ roadH(37);
+ roadV(12);
+ roadV(50);
+ for(let x=50;x<=88;x++)if(m[14][x]!==7)m[14][x]=3;
+ for(let y=14;y<=37;y++)if(m[y][88]!==7)m[y][88]=3;
+ for(let x=18;x<=63;x++)if(m[45][x]!==7)m[45][x]=3;
+
+ // Village: central square plus individual buildings.
+ for(let y=34;y<=40;y++)for(let x=8;x<=19;x++)m[y][x]=0;
+ for(let x=9;x<=18;x+=3)for(let y=34;y<=36;y++)m[y][x]=4;
+ for(let x=10;x<=17;x+=4)for(let y=39;y<=40;y++)m[y][x]=4;
+ for(let x=8;x<=19;x++)m[37][x]=3;
+ for(let y=34;y<=40;y++)m[y][12]=3;
+
+ // Dungeon.
+ m[48][63]=6;m[47][63]=6;m[49][63]=6;
+ // Dragon fortress.
+ for(let y=5;y<13;y++)for(let x=82;x<94;x++)m[y][x]=5;
+
+ // Bridges wherever major roads cross rivers/lakes.
+ const bridge=(x,y,vertical=false)=>{
+   if(vertical){
+     for(let yy=y-1;yy<=y+1;yy++)if(yy>=0&&yy<H)m[yy][x]=8;
+   }else{
+     for(let xx=x-1;xx<=x+1;xx++)if(xx>=0&&xx<W)m[y][xx]=8;
+   }
+ };
+ // Main river crossings.
+ bridge(54,14,true);
+ bridge(56,37,true);
+ bridge(88,38,false);
+ bridge(50,45,true);
+ // Lake crossings near established roads.
+ bridge(12,21,false);
+ bridge(24,37,false);
+
+ // World border should feel like wilderness, not a hard square wall.
+ for(let x=0;x<W;x++){m[0][x]=1;m[H-1][x]=1}
+ for(let y=0;y<H;y++){m[y][0]=1;m[y][W-1]=1}
+
+ return m;
+}
+function newGame(){
+ const s=combinedStats(selectedRace,selectedClass),m=meta();
+ game={
+  meta:m,player:{name:$('nameInput').value.trim()||'Adventurer',race:selectedRace,class:selectedClass,level:1,xp:0,gold:75,
+   hp:100+s.vit*8,maxHp:100+s.vit*8,mana:20+s.int*4,maxMana:20+s.int*4,stats:s,
+   _baseLuck:s.luck,weapon:0,armor:0,potions:3,x:5,y:15,
+   equipment:{weapon:null,armor:null,helmet:null,ring:null},
+   inventory:{potions:3,gear:[],materials:[]},shop:{open:false,mode:'buy'}},
+  world:{version:3,day:1,map:makeMap()},enemies:[],npcs:[],items:[],combat:null,questProgress:{},quests:[]};
+ initWorld();refreshEquipmentStats();$('creator').style.display='none';$('log').innerHTML='';mode='explore';
+ log(`Welcome, ${game.player.name}, ${selectedRace} ${selectedClass}. The realm awaits.`,'good');
+ log('Speak to the Elder, Blacksmith, and Ranger in the village to begin your first quests.');
+ save();render();
+}
+function initWorld(){
+ spawnEnemies();
+ game.npcs=[
+  {name:"Elder",x:3,y:14,type:"elder",color:"#d8c28c"},
+  {name:"Blacksmith",x:7,y:16,type:"smith",color:"#d87b54"},
+  {name:"Ranger",x:3,y:17,type:"ranger",color:"#7bc67b"}
+ ];
+ game.quests=quests.map(q=>({...q,active:false,complete:false}));
+ game.items=[];
+ for(let i=0;i<7;i++){
+   let x,y;do{x=rand(1,W-2);y=rand(1,H-2)}while(game.world.map[y][x]!==0);
+   game.items.push({name:"Iron Ore",type:"material",x,y,collected:false});
+ }
+ const starterLoot=[
+   {type:"gear",gear:{name:"Rusty Shortsword",slot:"weapon",power:2,level:1,rarity:"Common"}},
+   {type:"gear",gear:{name:"Leather Armor",slot:"armor",power:2,level:1,rarity:"Common"}},
+   {type:"potion",name:"Health Potion"}
+ ];
+ for(const loot of starterLoot){
+   let x,y;do{x=rand(2,W-3);y=rand(2,H-3)}while(game.world.map[y][x]!==0);
+   game.items.push({...loot,x,y,collected:false});
+ }
+}
+function spawnEnemies(){
+ game.enemies=[];
+ const zones=[
+  ['Wolf',24,14,12],['Goblin',28,18,14],['Skeleton',22,22,18],
+  ['Orc',20,28,24],['Troll',14,34,30]
+ ];
+ zones.forEach(([name,count,minLevel,spread])=>{
+   for(let i=0;i<count;i++){
+     let x,y,tries=0;
+     do{
+       x=rand(2,W-3); y=rand(2,H-3); tries++;
+     }while((game.world.map[y][x]!==0 && game.world.map[y][x]!==3) ||
+            dist({x,y},game.player)<9 || (x>78&&y<18) || tries>500);
+     const d=enemyDefs[name];
+     game.enemies.push({
+       name,maxHp:d.hp,hp:d.hp,atk:d.atk,def:d.def,xp:d.xp,gold:d.gold,
+       x,y,boss:false,respawnAt:0,zone:name
+     });
+   }
+ });
+ const d=enemyDefs.Dragon;
+ game.enemies.push({
+   name:"Dragon",maxHp:d.hp,hp:d.hp,atk:d.atk,def:d.def,x:88,y:9,
+   xp:d.xp,gold:d.gold,boss:true,respawnAt:0,zone:"Dragon"
+ });
+}
+function respawnEnemies(){
+  if(!game)return;
+  const now=Date.now();
+  for(const e of game.enemies){
+    if(e.boss)continue;
+    if(e.hp<=0 && e.respawnAt && now>=e.respawnAt){
+      let x,y,tries=0;
+      do{x=rand(2,W-3);y=rand(2,H-3);tries++}
+      while((game.world.map[y][x]!==0&&game.world.map[y][x]!==3)||
+            dist({x,y},game.player)<10||tries>300);
+      e.x=x;e.y=y;e.hp=e.maxHp;e.respawnAt=0;
+    }
+  }
+}
+
+function walkable(x,y){return x>=0&&y>=0&&x<W&&y<H&&game.world.map[y][x]!==1&&game.world.map[y][x]!==2&&game.world.map[y][x]!==7}
+function move(dx,dy){
+ if(mode!=='explore'||!game)return;
+ respawnEnemies();
+ const p=game.player,nx=p.x+dx,ny=p.y+dy;
+ if(!walkable(nx,ny))return;
+ p.x=nx;p.y=ny;
+
+ const item=game.items.find(i=>i.x===nx&&i.y===ny&&!i.collected);
+ if(item){
+   item.collected=true;
+   if(item.type==="gear"){
+     p.inventory.gear.push(item.gear);
+     log(`You found ${item.gear.name}! Open Inventory to equip it.`,'gold');
+   }else if(item.name==="Health Potion"){
+     p.inventory.potions++;p.potions=p.inventory.potions;
+     log("You found a Health Potion.",'good');
+   }else{
+     p.inventory.materials.push(item.name);
+     log(`You found ${item.name}.`,'gold');
+     updateQuest("item",item.name);
+   }
+ }
+
+ const e=game.enemies.find(e=>e.x===nx&&e.y===ny&&e.hp>0);
+ if(e){startCombat(e);return}
+
+ const npc=game.npcs.find(n=>n.x===nx&&n.y===ny);
+ if(npc)talk(npc);
+
+ if(game.world.map[ny][nx]===4){
+   p.hp=p.maxHp;p.mana=p.maxMana;
+ }
+ // No random encounters: enemies only exist where they are visibly spawned,
+ // and defeated enemies return through the normal respawn system.
+ save();render();
+}
+addEventListener('keydown',e=>{
+ const k=e.key.toLowerCase();if(['arrowup','arrowdown','arrowleft','arrowright','w','a','s','d'].includes(k)){e.preventDefault();if(k==='w'||k==='arrowup')move(0,-1);if(k==='s'||k==='arrowdown')move(0,1);if(k==='a'||k==='arrowleft')move(-1,0);if(k==='d'||k==='arrowright')move(1,0)}
+});
+
+function talk(n){
+ if(n.type==="elder"){
+  const q=game.quests[0];q.active=true;log("Elder: The wolves are preying on travelers. Defeat five and return to me.");activeTab='quests';
+ }else if(n.type==="smith"){
+  const q=game.quests[3];q.active=true;log("Blacksmith: Iron ore is scattered around the wilderness. Bring me three pieces.");
+ }else if(n.type==="ranger"){
+  const q=game.quests[1];q.active=true;game.quests[2].active=true;log("Ranger: Goblins and skeletons are infesting the roads. Deal with them.");
+ }
+ render();
+}
+function updateQuest(type,target){
+ game.quests.forEach(q=>{if(q.active&&!q.complete&&q.type===type&&q.target===target){
+  game.questProgress[q.id]=(game.questProgress[q.id]||0)+1;
+  if(game.questProgress[q.id]>=q.need){q.complete=true;game.player.xp+=q.reward;game.player.gold+=q.gold;log(`Quest complete: ${q.name}! +${q.reward} XP, +${q.gold} gold.`,'gold');levelCheck()}
+ }});
+}
+function levelCheck(){
+ const p=game.player;
+ const growth={
+  Warrior:{str:2,agi:1,int:1,vit:1,luck:0},
+  Ranger:{str:1,agi:2,int:1,vit:1,luck:0},
+  Mage:{str:1,agi:1,int:2,vit:1,luck:0},
+  Cleric:{str:1,agi:1,int:1,vit:2,luck:0},
+  Rogue:{str:1,agi:2,int:1,vit:1,luck:1}
+ };
+ while(p.xp>=xpNeeded(p.level)){
+  p.xp-=xpNeeded(p.level);
+  p.level++;
+  const g=growth[p.class]||{str:1,agi:1,int:1,vit:1,luck:0};
+  for(const k of Object.keys(p.stats))p.stats[k]+=g[k]||0;
+
+  // Leveling now directly improves combat stats, survivability and resources.
+  p.maxHp+=10+p.stats.vit*2;
+  p.maxMana+=4+p.stats.int;
+  p.hp=p.maxHp;
+  p.mana=p.maxMana;
+  p._baseLuck=p.stats.luck;
+  refreshEquipmentStats();
+
+  log(`LEVEL UP! Level ${p.level}: +${g.str} STR, +${g.agi} AGI, +${g.int} INT, +${g.vit} VIT${g.luck?`, +${g.luck} LCK`:''}.`,'gold');
+  if(p.level===15)log('Level 15 reached. You are strong enough to challenge the Last Dragon.','gold');
+ }
+}function startCombat(e){if(e.hp<=0)return;mode='combat';game.combat={enemy:e};render()}
+function playerAttack(){
+ const p=game.player,e=game.combat.enemy;let dmg=Math.max(1,8+p.stats.str*2+weaponPower(p)+rand(0,7)-e.def),crit=Math.random()<Math.min(.5,.05+p.stats.luck*.02);if(crit)dmg*=2;
+ e.hp-=dmg;log(`You hit ${e.name} for ${dmg}${crit?' critical':''}.`,'good');if(e.hp<=0){victory(e);return}enemyTurn();
+}
+function skill(){
+ const p=game.player,e=game.combat.enemy;if(p.skillCooldown>0)return log(`Skill ready in ${p.skillCooldown} turn(s).`);
+ let dmg=0,cost=0;
+ if(p.class==='Warrior'){dmg=22+p.stats.str*3}
+ if(p.class==='Ranger'){dmg=17+p.stats.agi*3;cost=3}
+ if(p.class==='Mage'){dmg=30+p.stats.int*4;cost=8}
+ if(p.class==='Cleric'){dmg=13+p.stats.int*2+p.stats.str;p.hp=clamp(p.hp+30+p.stats.int*3,0,p.maxHp);cost=5}
+ if(p.class==='Rogue'){dmg=18+p.stats.agi*3+p.stats.luck*2;cost=2}
+ if(p.mana<cost)return log('Not enough mana.');
+ p.mana-=cost;dmg=Math.max(1,dmg-e.def);e.hp-=dmg;p.skillCooldown=2;log(`${classes[p.class].skill} deals ${dmg}.`,'gold');
+ if(e.hp<=0){victory(e);return}enemyTurn();
+}
+function potion(){
+ const p=game.player;
+ if(p.inventory.potions<=0)return log('No potions.');
+ p.inventory.potions--;p.potions=p.inventory.potions;
+ p.hp=clamp(p.hp+55,0,p.maxHp);p.mana=clamp(p.mana+15,0,p.maxMana);
+ log('You drink a Health Potion.','good');enemyTurn()
+}
+function run(){const e=game.combat.enemy;if(e.boss){log('The Dragon blocks your escape!','bad');enemyTurn();return}if(Math.random()<.7){mode='explore';game.combat=null;log('You escape.')}else{log('You fail to escape!','bad');enemyTurn()}render()}
+function enemyTurn(){
+ const p=game.player,e=game.combat.enemy;let dmg=Math.max(1,e.atk+rand(-3,5)-Math.floor(p.stats.vit/2)-armorPower(p));p.hp-=dmg;log(`${e.name} hits you for ${dmg}.`,'bad');if(p.skillCooldown>0)p.skillCooldown--;
+ if(p.hp<=0){log('You have fallen. Your cycle has ended. Legacy survives.','bad');resetCycle();return}render();
+}
+function weaponPower(p){return p.equipment?.weapon?.power||0}
+function armorPower(p){
+ let total=p.equipment?.armor?.power||0;
+ total+=Math.floor((p.equipment?.helmet?.power||0)/2);
+ return total;
+}
+function ringLuck(p){return p.equipment?.ring?.power||0}
+function refreshEquipmentStats(){
+ const p=game.player;
+ p.weapon=weaponPower(p);
+ p.armor=armorPower(p);
+ p.stats.luck=p._baseLuck+(ringLuck(p)||0);
+ p.maxHp=100+p.stats.vit*8+p.armor*3;
+ p.maxMana=20+p.stats.int*4;
+ p.hp=Math.min(p.hp,p.maxHp);
+ p.mana=Math.min(p.mana,p.maxMana);
+}
+function equipGear(index){
+ const p=game.player,g=p.inventory.gear[index];
+ if(!g)return;
+ if(p.level<g.level)return log(`You need level ${g.level} to equip ${g.name}.`);
+ p.equipment[g.slot]=g;
+ p.inventory.gear.splice(index,1);
+ refreshEquipmentStats();
+ log(`Equipped ${g.name}.`,'good');
+ save();render();
+}
+function unequipGear(slot){
+ const p=game.player,g=p.equipment[slot];
+ if(!g)return;
+ p.inventory.gear.push(g);p.equipment[slot]=null;
+ refreshEquipmentStats();
+ log(`Unequipped ${g.name}.`);
+ save();render();
+}
+function usePotionFromInventory(){
+ const p=game.player;
+ if(p.inventory.potions<=0)return log("You don't have a health potion.");
+ if(p.hp>=p.maxHp&&p.mana>=p.maxMana)return log("You're already fully restored.");
+ p.inventory.potions--;p.potions=p.inventory.potions;
+ p.hp=clamp(p.hp+55,0,p.maxHp);p.mana=clamp(p.mana+15,0,p.maxMana);
+ log("You use a Health Potion from your inventory.",'good');
+ save();render();
+}
+function maybeDropLoot(e){
+ const p=game.player;
+ if(e.boss)return;
+ const roll=Math.random();
+ if(roll<0.38){
+   const eligible=gearDefs.filter(g=>g.level<=Math.max(1,p.level+1));
+   const g=eligible[rand(0,eligible.length-1)];
+   game.items.push({name:g.name,type:"gear",gear:{...g},x:e.x,y:e.y,collected:false});
+   log(`${e.name} dropped ${g.name}!`,'gold');
+ }else if(roll<0.55){
+   game.items.push({name:"Health Potion",type:"potion",x:e.x,y:e.y,collected:false});
+   log(`${e.name} dropped a Health Potion!`,'gold');
+ }
+}
+
+function victory(e){
+ const p=game.player;
+ p.xp+=e.xp;p.gold+=e.gold;
+ log(`${e.name} defeated! +${e.xp} XP, +${e.gold} gold.`,'good');
+ updateQuest("kill",e.name);levelCheck();
+ if(e.boss)return dragonSlain();
+ e.hp=0;
+ maybeDropLoot(e);
+ e.respawnAt=Date.now()+rand(12000,28000);
+ mode='explore';game.combat=null;
+ save();render();
+}
+function dragonSlain(){
+ game.meta.kills++;game.meta.legacy++;if(!game.meta.achievements)game.meta.achievements=[];game.meta.achievements.push(`Dragon ${game.meta.kills}`);
+ localStorage.setItem('dragonRealmMeta',JSON.stringify(game.meta));localStorage.removeItem('dragonRealmSave');
+ const k=game.meta.kills,l=game.meta.legacy;
+ alert(`THE DRAGON IS SLAIN!\\n\\nDragon kills: ${k}\\nLegacy points: ${l}\\n\\nYour world and character will now reset.`);
+ game=null;selectedRace='Human';selectedClass='Warrior';buildChoices();updatePreview();$('creator').style.display='flex';$('dragonKills').textContent=k;$('legacy').textContent=l;
+}
+function resetCycle(){
+ const m=meta();
+ if(!confirm('Start a fresh run?\n\nThis resets your character, map, enemies, quests, inventory, and equipment.\n\nDragon kills, Legacy points, and achievements will NOT be lost.'))return;
+ localStorage.removeItem('dragonRealmSave');
+ localStorage.setItem('dragonRealmMeta',JSON.stringify(m));
+ game=null;mode='explore';selectedRace='Human';selectedClass='Warrior';
+ buildChoices();updatePreview();$('creator').style.display='flex';
+ $('dragonKills').textContent=m.kills||0;$('legacy').textContent=m.legacy||0;
+ $('log').innerHTML='';log('Fresh run ready. Your Dragon Legacy was preserved.','good');
+}
+function buyPotion(){
+ const p=game.player;
+ if(p.gold<20)return log('You need 20 gold.');
+ p.gold-=20;p.inventory.potions++;p.potions=p.inventory.potions;
+ log('Health Potion purchased.','gold');save();render()
+}
+function upgrade(kind){
+ const p=game.player,cost=45+p.level*20;if(p.gold<cost)return log(`You need ${cost} gold.`);
+ if(kind==='weapon')p.weapon++;else p.armor++;p.gold-=cost;log(`${kind} upgraded!`,'gold');save();render();
+}
+
+function sprite(type,x,y,frame=0){
+ const px=x*T,py=y*T;ctx.save();ctx.translate(px,py);
+ // shadow
+ ctx.fillStyle="#0006";ctx.fillRect(8,26,16,3);
+ if(type==="player"){
+  ctx.fillStyle="#e8c58a";ctx.fillRect(11,5,10,8);ctx.fillStyle="#5b3826";ctx.fillRect(9,3,14,5);
+  ctx.fillStyle=game.player.race==="Elf"?"#77a9d9":game.player.race==="Orc"?"#60994d":"#5d77b5";ctx.fillRect(8,13,16,11);
+  ctx.fillStyle="#d8d8d8";ctx.fillRect(6,14,3,12);ctx.fillRect(23,14,3,12);
+ }else if(type==="Dragon"){
+  ctx.fillStyle="#9b3e3e";ctx.fillRect(6,9,20,15);ctx.fillRect(3,12,7,8);ctx.fillRect(23,12,6,8);
+  ctx.fillStyle="#d98b4b";ctx.fillRect(10,5,12,8);ctx.fillStyle="#f0d36a";ctx.fillRect(11,8,3,3);ctx.fillRect(19,8,3,3);
+  ctx.fillStyle="#6f252f";ctx.fillRect(1,5,8,11);ctx.fillRect(23,5,8,11);ctx.fillRect(12,23,5,7);ctx.fillRect(19,23,5,7);
+ }else{
+  const body={Wolf:"#777d88",Goblin:"#5f9c58",Skeleton:"#d6d0b9",Orc:"#698e50",Troll:"#7d6656"}[type]||"#888";
+  ctx.fillStyle=body;ctx.fillRect(8,9,16,16);ctx.fillRect(5,13,22,9);
+  ctx.fillStyle="#222";ctx.fillRect(10,13,3,3);ctx.fillRect(19,13,3,3);
+  if(type==="Wolf"){ctx.fillRect(4,8,5,7);ctx.fillRect(23,8,5,7)}
+  if(type==="Goblin"){ctx.fillStyle="#b7d17c";ctx.fillRect(4,14,5,3);ctx.fillRect(23,14,5,3)}
+  if(type==="Skeleton"){ctx.fillStyle="#4b3f36";ctx.fillRect(9,22,5,7);ctx.fillRect(19,22,5,7)}
+  if(type==="Orc"){ctx.fillStyle="#ddd";ctx.fillRect(8,18,4,3);ctx.fillRect(20,18,4,3)}
+  if(type==="Troll"){ctx.fillStyle="#5b483d";ctx.fillRect(6,5,7,7);ctx.fillRect(19,5,7,7)}
+ }
+ ctx.restore();
+}
+function draw(){
+ ctx.clearRect(0,0,canvas.width,canvas.height);
+ const viewW=canvas.width/T, viewH=canvas.height/T;
+ let camX=game.player.x-viewW/2,camY=game.player.y-viewH/2;
+ camX=clamp(camX,0,W-viewW);camY=clamp(camY,0,H-viewH);
+
+ const sx0=Math.floor(camX)-1,sy0=Math.floor(camY)-1;
+ const sx1=Math.ceil(camX+viewW)+1,sy1=Math.ceil(camY+viewH)+1;
+ const now=Date.now();
+
+ const drawTree=(cx,cy,variant=0)=>{
+  const palettes=[
+    ["#1d4f25","#2f7435","#55a044","#78bb58"],
+    ["#1c4530","#2d7041","#4d9560","#75b87a"],
+    ["#60351e","#8f5227","#b66d2c","#d1943e"],
+    ["#193c2a","#28623e","#40834f","#5d9d61"]
+  ];
+  const p=palettes[variant%palettes.length];
+  const sway=((Math.floor(cx)+Math.floor(cy))%3)-1;
+  ctx.save(); ctx.translate(cx+sway,cy);
+
+  // Ground shadow
+  ctx.fillStyle="rgba(18,24,13,.30)";
+  ctx.beginPath(); ctx.ellipse(0,18,13,4,0,0,Math.PI*2); ctx.fill();
+
+  // Narrow trunk
+  ctx.fillStyle="#4a2b1a";
+  ctx.beginPath();
+  ctx.moveTo(-4,17); ctx.lineTo(-3,-7); ctx.lineTo(0,-13);
+  ctx.lineTo(3,-7); ctx.lineTo(4,17); ctx.lineTo(1,19);
+  ctx.lineTo(0,15); ctx.lineTo(-2,19); ctx.closePath(); ctx.fill();
+  ctx.fillStyle="#855331";
+  ctx.beginPath();
+  ctx.moveTo(-2,16); ctx.lineTo(-2,-7); ctx.lineTo(0,-11);
+  ctx.lineTo(1,-7); ctx.lineTo(2,16); ctx.lineTo(0,17); ctx.closePath(); ctx.fill();
+
+  // Forked branches remain visible
+  ctx.strokeStyle="#4a2b1a"; ctx.lineWidth=2.8; ctx.lineCap="round";
+  ctx.beginPath();
+  ctx.moveTo(0,-3); ctx.lineTo(-7,-11); ctx.lineTo(-10,-16);
+  ctx.moveTo(0,-3); ctx.lineTo(7,-11); ctx.lineTo(10,-16); ctx.stroke();
+
+  // Strong tree-emoji silhouette: pointed top and three foliage tiers
+  ctx.fillStyle=p[0];
+  ctx.beginPath();
+  ctx.moveTo(0,-32);
+  ctx.lineTo(-7,-20); ctx.lineTo(-3,-20);
+  ctx.lineTo(-11,-12); ctx.lineTo(-6,-12);
+  ctx.lineTo(-15,-3); ctx.lineTo(-9,-3);
+  ctx.lineTo(-18,6); ctx.lineTo(-9,6);
+  ctx.lineTo(0,10); ctx.lineTo(9,6); ctx.lineTo(18,6);
+  ctx.lineTo(15,-3); ctx.lineTo(9,-3);
+  ctx.lineTo(11,-12); ctx.lineTo(6,-12);
+  ctx.lineTo(3,-20); ctx.lineTo(7,-20); ctx.closePath(); ctx.fill();
+
+  ctx.fillStyle=p[1];
+  ctx.beginPath();
+  ctx.moveTo(0,-27); ctx.lineTo(-5,-18); ctx.lineTo(-2,-18);
+  ctx.lineTo(-9,-11); ctx.lineTo(-5,-11);
+  ctx.lineTo(-12,-3); ctx.lineTo(-7,-3);
+  ctx.lineTo(-14,4); ctx.lineTo(0,8); ctx.lineTo(14,4);
+  ctx.lineTo(7,-3); ctx.lineTo(12,-3); ctx.lineTo(5,-11);
+  ctx.lineTo(9,-11); ctx.lineTo(2,-18); ctx.lineTo(5,-18); ctx.closePath(); ctx.fill();
+
+  ctx.fillStyle=p[2];
+  ctx.beginPath();
+  ctx.moveTo(0,-25); ctx.lineTo(-4,-17); ctx.lineTo(0,-17);
+  ctx.lineTo(-7,-10); ctx.lineTo(-2,-10); ctx.lineTo(-9,-2);
+  ctx.lineTo(-3,-2); ctx.lineTo(-7,4); ctx.lineTo(0,7);
+  ctx.lineTo(5,3); ctx.lineTo(2,-2); ctx.lineTo(8,-2);
+  ctx.lineTo(2,-10); ctx.lineTo(7,-10); ctx.lineTo(1,-17);
+  ctx.lineTo(4,-17); ctx.closePath(); ctx.fill();
+
+  ctx.fillStyle=p[3];
+  ctx.beginPath();
+  ctx.arc(-4,-15,2.6,0,Math.PI*2);
+  ctx.arc(1,-22,2.2,0,Math.PI*2);
+  ctx.arc(5,-6,2.2,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.strokeStyle="#a36b41"; ctx.lineWidth=1.2;
+  ctx.beginPath();
+  ctx.moveTo(-1,1); ctx.lineTo(-1,13);
+  ctx.moveTo(2,4); ctx.lineTo(2,12); ctx.stroke();
+  ctx.restore();
+};
+ const drawHouse=(px,py,variant=0)=>{
+   const s=T/40*1.22;ctx.save();ctx.translate(px-T*.11,py-T*.13);ctx.scale(s,s);
+   ctx.fillStyle="#0006";ctx.fillRect(4,32,34,5);
+   const walls=["#a9774c","#b68151","#956c4a","#b88957"];
+   ctx.fillStyle=walls[variant%walls.length];ctx.fillRect(6,16,28,18);
+   ctx.fillStyle=variant%2?"#66302d":"#79372e";
+   ctx.beginPath();ctx.moveTo(2,17);ctx.lineTo(20,3);ctx.lineTo(38,17);ctx.lineTo(34,19);ctx.lineTo(20,9);ctx.lineTo(6,19);ctx.closePath();ctx.fill();
+   ctx.fillStyle="#4b2a25";ctx.fillRect(17,25,7,9);
+   ctx.fillStyle="#b9d6d2";ctx.fillRect(9,20,7,7);ctx.fillRect(25,20,7,7);
+   ctx.fillStyle="#e7c56e";ctx.fillRect(19,27,3,4);
+   ctx.fillStyle="#d7aa63";ctx.fillRect(10,29,5,3);
+   ctx.restore();
+ };
+ for(let y=Math.max(0,sy0);y<Math.min(H,sy1);y++)for(let x=Math.max(0,sx0);x<Math.min(W,sx1);x++){
+   const t=game.world.map[y][x],px=(x-camX)*T,py=(y-camY)*T;
+   // Rich base terrain.
+   if(t===2){
+     const wave=Math.sin((x*1.7+y*2.1)+now/900)*1.5;
+     ctx.fillStyle="#17608a";ctx.fillRect(px,py,T,T);
+     ctx.fillStyle="#2378a0";ctx.fillRect(px+5,py+12+wave,T-12,2);
+     ctx.fillStyle="#2d8cb1";ctx.fillRect(px+18,py+25-wave,10,2);
+   }else if(t===3){
+     ctx.fillStyle="#b58b58";ctx.fillRect(px,py,T,T);
+     ctx.fillStyle="#c9a06a";ctx.fillRect(px+2,py+5,T-4,T-10);
+   }else if(t===8){
+     ctx.fillStyle="#4e3427";ctx.fillRect(px,py,T,T);
+     ctx.fillStyle="#9b6a43";ctx.fillRect(px+4,py,T-8,T);
+     ctx.fillStyle="#5f402c";ctx.fillRect(px+5,py+5,T-10,3);ctx.fillRect(px+5,py+T-8,T-10,3);
+     ctx.fillStyle="#d2a36a";ctx.fillRect(px+7,py+14,T-14,4);
+   }else if(t===7){
+     ctx.fillStyle="#667078";ctx.fillRect(px,py,T,T);
+     ctx.fillStyle="#7f8990";
+     ctx.beginPath();ctx.moveTo(px+4,py+31);ctx.lineTo(px+13,py+11);ctx.lineTo(px+20,py+23);ctx.lineTo(px+29,py+7);ctx.lineTo(px+37,py+32);ctx.closePath();ctx.fill();
+     ctx.fillStyle="#d7dce0";
+     ctx.beginPath();ctx.moveTo(px+13,py+11);ctx.lineTo(px+17,py+18);ctx.lineTo(px+20,py+23);ctx.lineTo(px+16,py+20);ctx.closePath();ctx.fill();
+   }else if(t===4){
+     ctx.fillStyle="#7d6a43";ctx.fillRect(px,py,T,T);
+     ctx.fillStyle="#b79a62";ctx.fillRect(px+3,py+3,T-6,T-6);
+   }else if(t===5){
+     ctx.fillStyle="#35283a";ctx.fillRect(px,py,T,T);
+     ctx.fillStyle="#57404b";ctx.fillRect(px+2,py+2,T-4,T-4);
+   }else if(t===6){
+     ctx.fillStyle="#5c5a55";ctx.fillRect(px,py,T,T);
+     ctx.fillStyle="#29232a";ctx.fillRect(px+5,py+8,T-10,T-8);
+   }else{
+     ctx.fillStyle="#3d7738";ctx.fillRect(px,py,T,T);
+     // Irregular meadow texture rather than repeated horizontal stripes.
+     const seed=(x*92821+y*68917)%97;
+     ctx.fillStyle=seed%3===0?"#5a9145":"#4a8640";
+     ctx.fillRect(px+5+(seed%7),py+7,2,6);
+     ctx.fillRect(px+T-10,py+T-14-(seed%4),2,7);
+     ctx.fillRect(px+17,py+T-8,2,5);
+     if(seed%11===0){
+       ctx.fillStyle="#789f4d";ctx.fillRect(px+10,py+20,3,3);ctx.fillRect(px+13,py+17,2,4);
+     }
+     if(seed%17===0){
+       ctx.fillStyle="#c7b58a";ctx.fillRect(px+28,py+9,3,2);
+     }
+   }
+
+   if(t===1){
+     // Woodland floor: fallen leaves and grass peeking between trees.
+     ctx.fillStyle="#315f32";
+     ctx.fillRect(px+5,py+T-7,5,2);
+     ctx.fillRect(px+T-13,py+T-11,4,2);
+     drawTree(px+T/2,py+T/2-1,(x*3+y)%4);
+   }else if(t===4){
+     // Only some village tiles are buildings; others form the plaza.
+     if((x+y)%3!==0)drawHouse(px,py,(x*3+y)%4);
+     else{
+       ctx.fillStyle="#d7b56e";ctx.beginPath();ctx.arc(px+T/2,py+T/2,5,0,Math.PI*2);ctx.fill();
+     }
+   }else if(t===5 && (x%4===0||y===5)){
+     // Fortress battlements.
+     ctx.fillStyle="#8f8d93";ctx.fillRect(px+5,py+8,T-10,T-10);
+     ctx.fillStyle="#c4c0b7";ctx.fillRect(px+4,py+5,7,9);ctx.fillRect(px+16,py+4,7,10);ctx.fillRect(px+29,py+5,7,9);
+   }else if(t===6){
+     ctx.fillStyle="#17131c";ctx.beginPath();ctx.arc(px+T/2,py+27,13,Math.PI,0);ctx.fill();
+     ctx.fillStyle="#a7a095";ctx.fillRect(px+8,py+29,24,3);
+   }
+ }
+
+ const drawSprite=(type,x,y)=>{
+   const px=(x-camX)*T,py=(y-camY)*T,s=T/32;
+   ctx.save();ctx.translate(px,py);ctx.scale(s,s);
+   ctx.fillStyle="#0007";ctx.beginPath();ctx.ellipse(16,29,10,3,0,0,Math.PI*2);ctx.fill();
+
+   if(type==="player"){
+     ctx.fillStyle="#e8c58a";ctx.fillRect(11,5,10,8);
+     ctx.fillStyle="#5b3826";ctx.fillRect(8,2,16,6);ctx.fillRect(11,0,10,4);
+     ctx.fillStyle=game.player.race==="Elf"?"#4d8dcc":game.player.race==="Orc"?"#4f914b":"#4f6fae";ctx.fillRect(7,13,18,12);
+     ctx.fillStyle="#c8d0d8";ctx.fillRect(5,14,4,13);ctx.fillRect(23,14,4,13);
+     ctx.fillStyle="#f0d27a";ctx.fillRect(13,15,6,4);
+     ctx.fillStyle="#332a27";ctx.fillRect(12,9,3,2);ctx.fillRect(18,9,3,2);
+   }else if(type==="Dragon"){
+     ctx.fillStyle="#8e3038";ctx.fillRect(5,10,22,15);ctx.fillRect(2,13,8,8);ctx.fillRect(24,13,7,8);
+     ctx.fillStyle="#c85c45";ctx.fillRect(9,5,14,11);
+     ctx.fillStyle="#6c2430";ctx.fillRect(0,5,10,13);ctx.fillRect(22,5,10,13);
+     ctx.fillStyle="#e5a04e";ctx.fillRect(11,8,4,4);ctx.fillRect(18,8,4,4);
+     ctx.fillStyle="#f4dc6b";ctx.fillRect(12,9,2,2);ctx.fillRect(19,9,2,2);
+     ctx.fillStyle="#6a222b";ctx.fillRect(11,24,6,7);ctx.fillRect(20,24,6,7);
+     ctx.fillStyle="#e4b05d";ctx.fillRect(26,15,5,3);
+   }else{
+     const body={Wolf:"#7e8791",Goblin:"#5c9d58",Skeleton:"#d8d2c2",Orc:"#638e4d",Troll:"#7d6757"}[type]||"#888";
+     ctx.fillStyle=body;
+     if(type==="Wolf"){
+       ctx.beginPath();ctx.moveTo(4,14);ctx.lineTo(9,7);ctx.lineTo(13,12);ctx.lineTo(20,9);ctx.lineTo(28,14);ctx.lineTo(25,24);ctx.lineTo(7,24);ctx.closePath();ctx.fill();
+       ctx.fillStyle="#222";ctx.fillRect(10,14,3,3);ctx.fillRect(20,14,3,3);
+       ctx.fillStyle="#c7ccd1";ctx.fillRect(27,18,4,3);
+     }else if(type==="Goblin"){
+       ctx.fillRect(7,10,18,17);ctx.fillRect(4,14,24,10);
+       ctx.fillStyle="#b7d17c";ctx.fillRect(3,13,6,4);ctx.fillRect(23,13,6,4);
+       ctx.fillStyle="#222";ctx.fillRect(10,15,3,3);ctx.fillRect(19,15,3,3);
+       ctx.fillStyle="#d7e3c1";ctx.fillRect(13,22,7,2);
+     }else if(type==="Skeleton"){
+       ctx.fillStyle="#d8d2c2";ctx.fillRect(9,7,14,13);ctx.fillRect(12,20,3,9);ctx.fillRect(18,20,3,9);
+       ctx.fillStyle="#403b38";ctx.fillRect(11,11,3,3);ctx.fillRect(18,11,3,3);ctx.fillRect(14,16,5,2);
+       ctx.fillStyle="#b5aea2";ctx.fillRect(6,21,7,3);ctx.fillRect(19,21,7,3);
+     }else if(type==="Orc"){
+       ctx.fillRect(7,9,19,18);ctx.fillRect(4,14,25,10);
+       ctx.fillStyle="#dfe7d7";ctx.fillRect(7,18,5,4);ctx.fillRect(20,18,5,4);
+       ctx.fillStyle="#252525";ctx.fillRect(11,13,3,3);ctx.fillRect(19,13,3,3);
+     }else if(type==="Troll"){
+       ctx.fillRect(6,10,21,18);ctx.fillRect(3,15,27,9);
+       ctx.fillStyle="#5a473b";ctx.fillRect(8,5,7,8);ctx.fillRect(18,5,7,8);
+       ctx.fillStyle="#ddd0a4";ctx.fillRect(10,19,4,4);ctx.fillRect(19,19,4,4);
+     }
+   }
+   ctx.restore();
+ };
+
+ // Items.
+ for(const i of game.items.filter(i=>!i.collected)){
+   const px=(i.x-camX)*T,py=(i.y-camY)*T;
+   if(px>-T&&py>-T&&px<canvas.width&&py<canvas.height){
+     ctx.fillStyle="#0006";ctx.fillRect(px+T*.32,py+T*.70,T*.36,4);
+     ctx.fillStyle="#c9cdd2";ctx.beginPath();ctx.moveTo(px+T*.5,py+T*.25);ctx.lineTo(px+T*.68,py+T*.5);ctx.lineTo(px+T*.5,py+T*.7);ctx.lineTo(px+T*.32,py+T*.5);ctx.closePath();ctx.fill();
+     ctx.fillStyle="#fff";ctx.fillRect(px+T*.45,py+T*.37,4,4);
+   }
+ }
+
+ // NPCs.
+ for(const n of game.npcs){
+   if(n.x<camX-2||n.y<camY-2||n.x>camX+viewW+2||n.y>camY+viewH+2)continue;
+   drawSprite("player",n.x,n.y);
+   const px=(n.x-camX)*T,py=(n.y-camY)*T;
+   ctx.fillStyle=n.color;ctx.fillRect(px+T*.35,py+T*.16,T*.30,T*.11);
+   ctx.fillStyle="#fff";ctx.font=`bold ${Math.max(10,T*.28)}px sans-serif`;ctx.textAlign="center";
+   ctx.strokeStyle="#111";ctx.lineWidth=3;ctx.strokeText(n.name,px+T/2,py-3);ctx.fillText(n.name,px+T/2,py-3);
+ }
+
+ // Enemies.
+ for(const e of game.enemies.filter(e=>e.hp>0)){
+   if(e.x<camX-2||e.y<camY-2||e.x>camX+viewW+2||e.y>camY+viewH+2)continue;
+   drawSprite(e.boss?"Dragon":e.name,e.x,e.y);
+   const px=(e.x-camX)*T,py=(e.y-camY)*T;
+   if(!e.boss){
+     ctx.fillStyle="#111";ctx.fillRect(px+5,py-5,T-10,4);
+     ctx.fillStyle="#d34b43";ctx.fillRect(px+5,py-5,(T-10)*Math.max(0,e.hp)/e.maxHp,4);
+   }
+ }
+
+ drawSprite("player",game.player.x,game.player.y);
+}
+function renderActions(){
+ if(mode==="combat"){
+   const e=game.combat.enemy;
+   $('actions').innerHTML=`<div class="card"><b>${e.name}</b> — ${Math.max(0,e.hp)}/${e.maxHp} HP<div class="bar"><div class="fill hp" style="width:${100*Math.max(0,e.hp)/e.maxHp}%"></div></div></div><div class="row"><button onclick="playerAttack()">Attack</button><button onclick="skill()">${classes[game.player.class].skill}${game.player.skillCooldown?' ('+game.player.skillCooldown+')':''}</button><button onclick="potion()">Potion (${game.player.inventory.potions})</button><button onclick="run()">Run</button></div>`
+ }else{
+   $('actions').innerHTML=`<div class="row"><button onclick="buyPotion()">Buy Potion (20g)</button><button onclick="save();log('Game saved.')">Save</button></div>`
+ }
+}
+function gearCard(g,i){
+ const equipped=Object.values(game.player.equipment||{}).some(x=>x&&x.name===g.name&&x.slot===g.slot);
+ return `<div class="card gear-card"><b>${g.name}</b> <span class="muted">${g.rarity||''}</span><br><span>${g.slot.toUpperCase()} +${g.power} · Req. Lv ${g.level}</span><br><button onclick="equipGear(${i})">Equip</button></div>`;
+}
+function equippedCard(slot,label){
+ const g=game.player.equipment?.[slot];
+ return `<div class="card"><b>${label}</b><br>${g?`${g.name} (+${g.power}) <button onclick="unequipGear('${slot}')">Unequip</button>`:'Empty'}</div>`;
+}
+function renderSide(){
+ const p=game.player;
+ let content;
+ if(activeTab==="quests"){
+  content=game.quests.map(q=>{const n=game.questProgress[q.id]||0;return `<div class="card"><b>${q.name}</b><br>${q.desc}<br><span class="${q.complete?'good':''}">${q.complete?'COMPLETE':q.active?n+'/'+q.need:'Talk to NPC'}</span></div>`}).join('');
+ }else if(activeTab==="inventory"){
+  const gear=(p.inventory.gear||[]).map((g,i)=>gearCard(g,i)).join('');
+  content=`<div class="card"><b>Consumables</b><br>Health Potions: <b>${p.inventory.potions}</b><br><button onclick="usePotionFromInventory()">Use Potion</button></div>
+   <div class="card"><b>Equipped Gear</b>${equippedCard('weapon','Weapon')}${equippedCard('armor','Armor')}${equippedCard('helmet','Helmet')}${equippedCard('ring','Ring')}</div>
+   <div><b>Found Gear</b>${gear||'<div class="card muted">No spare equipment yet. Defeat enemies and collect their drops.</div>'}</div>
+   <div class="card"><b>Materials</b><br>${(p.inventory.materials||[]).join(', ')||'None'}</div>
+   <div class="card"><b>Gold</b><br><span class="gold">${p.gold}</span></div>`;
+ }else{
+  content=`<div class="card"><b>${p.race} ${p.class}</b><br>${races[p.race].desc}<br>${classes[p.class].desc}</div>
+   <div class="grid2">${Object.entries(p.stats).map(([k,v])=>`<div class="card">${k.toUpperCase()}<br><b>${v}</b></div>`).join('')}</div>
+   <div class="card"><b>Combat Stats</b><br>Weapon Power: ${weaponPower(p)}<br>Armor Power: ${armorPower(p)}<br>Critical Chance: ${Math.min(50,5+p.stats.luck*2)}%</div>
+   <div class="card"><b>Legacy</b><br>Dragons slain: <span class="gold">${game.meta.kills}</span><br>Legacy points: <span class="gold">${game.meta.legacy}</span></div>`;
+ }
+ $('sideTitle').textContent=activeTab==="quests"?"Quests":activeTab==="inventory"?"Inventory":"Character";
+ $('side').innerHTML=content;
+}
+
+
+const shopStock=[
+ {name:'Health Potion',type:'potion',buy:18,sell:9},
+ {name:'Iron Sword',type:'gear',gearIndex:1,buy:95,sell:48},
+ {name:"Knight's Longsword",type:'gear',gearIndex:2,buy:220,sell:110},
+ {name:'Moonlit Bow',type:'gear',gearIndex:3,buy:220,sell:110},
+ {name:'Apprentice Staff',type:'gear',gearIndex:4,buy:180,sell:90},
+ {name:'Chainmail',type:'gear',gearIndex:6,buy:100,sell:50},
+ {name:'Knight Plate',type:'gear',gearIndex:7,buy:240,sell:120},
+ {name:'Forestwarden Mail',type:'gear',gearIndex:8,buy:220,sell:110},
+ {name:'Iron Helm',type:'gear',gearIndex:9,buy:65,sell:32},
+ {name:'Knight Helm',type:'gear',gearIndex:10,buy:150,sell:75},
+ {name:'Ring of Luck',type:'gear',gearIndex:11,buy:170,sell:85}
+];
+function isInTown(){
+ const p=game&&game.player;
+ return !!p && p.x>=8 && p.x<=19 && p.y>=34 && p.y<=40;
+}
+function openShop(){
+ if(!game){log('Start an adventure first.');return;}
+ if(!isInTown()){log('Visit the town to use the shop.');return;}
+ game.shop=game.shop||{open:false,mode:'buy'};
+ game.shop.open=true;game.shop.mode='buy';render();
+}
+function closeShop(){if(game&&game.shop){game.shop.open=false;render();}}
+function toggleShopMode(mode){if(game&&game.shop){game.shop.mode=mode;render();}}
+function buyShopItem(i){
+ if(!game)return;
+ const it=shopStock[i];if(!it)return;
+ if(game.player.gold<it.buy){log('Not enough gold.');return;}
+ game.player.gold-=it.buy;
+ if(it.type==='potion'){
+  game.player.inventory.potions++;
+  game.player.potions=game.player.inventory.potions;
+  log('Bought a Health Potion for '+it.buy+' gold.','gold');
+ }else{
+  const d=gearDefs[it.gearIndex];
+  game.player.inventory.gear.push({...d});
+  log('Bought '+d.name+' for '+it.buy+' gold.','gold');
+ }
+ save();render();
+}
+function sellGear(i){
+ if(!game)return;
+ const g=game.player.inventory.gear[i];if(!g)return;
+ const stock=shopStock.find(x=>x.type==='gear'&&gearDefs[x.gearIndex]?.name===g.name);
+ const price=stock?stock.sell:Math.max(5,Math.floor((g.power||0)*8));
+ game.player.gold+=price;
+ game.player.inventory.gear.splice(i,1);
+ log('Sold '+g.name+' for '+price+' gold.','gold');
+ save();render();
+}
+function renderShop(){
+ const panel=document.getElementById('shopPanel'),box=document.getElementById('shopContent');
+ if(!panel||!box)return;
+ if(!game||!game.shop||!game.shop.open){panel.style.display='none';return;}
+ panel.style.display='block';
+ const p=game.player;
+ let h=`<div style="display:flex;gap:8px;margin-bottom:12px">
+ <button onclick="toggleShopMode('buy')">Buy</button>
+ <button onclick="toggleShopMode('sell')">Sell</button>
+ <b style="margin-left:auto">Gold: ${p.gold}</b></div>`;
+ if(game.shop.mode==='buy'){
+  h+='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">';
+  shopStock.forEach((it,i)=>{
+   const d=it.type==='gear'?gearDefs[it.gearIndex]:null;
+   h+=`<div style="padding:10px;border:1px solid #6e5737;border-radius:8px;background:#211b14">
+   <b>${it.name}</b><div style="font-size:12px;opacity:.8">${d?'+'+d.power+' '+d.slot:'Restores 55 HP'}</div>
+   <button onclick="buyShopItem(${i})">Buy ${it.buy}g</button></div>`;
+  });
+  h+='</div>';
+ }else{
+  if(!p.inventory.gear.length)h+='<p>You have no gear to sell.</p>';
+  p.inventory.gear.forEach((g,i)=>{
+   const stock=shopStock.find(x=>x.type==='gear'&&gearDefs[x.gearIndex]?.name===g.name);
+   const price=stock?stock.sell:Math.max(5,Math.floor((g.power||0)*8));
+   h+=`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #4a3a28">
+   <span><b>${g.name}</b> — ${g.slot}, +${g.power}</span>
+   <button onclick="sellGear(${i})">Sell ${price}g</button></div>`;
+  });
+ }
+ box.innerHTML=h;
+}
+
+function render(){
+ renderShop();
+ if(!game)return;
+ const p=game.player;$('nameLabel').textContent=p.name;$('raceClass').textContent=`${p.race} ${p.class} · ${classes[p.class].skill}`;
+ $('levelText').textContent=`Level ${p.level}`;$('xpText').textContent=`${p.xp}/${xpNeeded(p.level)}`;$('xpBar').style.width=100*p.xp/xpNeeded(p.level)+"%";
+ $('hpText').textContent=`${Math.max(0,p.hp)}/${p.maxHp}`;$('hpBar').style.width=100*Math.max(0,p.hp)/p.maxHp+"%";
+ $('dragonKills').textContent=game.meta.kills;$('legacy').textContent=game.meta.legacy;draw();renderActions();renderSide();
+}
+$('exploreBtn').onclick=()=>{activeTab='character';mode='explore';render()};
+$('characterBtn').onclick=()=>{activeTab='character';renderSide()};
+$('inventoryBtn').onclick=()=>{activeTab='inventory';renderSide()};
+document.querySelector('.tabs').insertAdjacentHTML('beforeend','<button id="questsBtn">Quests</button><button id="shopBtn" onclick="openShop()">Shop</button><button id="resetBtn" title="Start a new run while keeping Dragon Legacy">Reset Run</button>');
+$('questsBtn').onclick=()=>{activeTab='quests';renderSide()};
+$('resetBtn').onclick=resetCycle;
+$('startBtn').onclick=newGame;
+buildChoices();updatePreview();
+const old=load();
+if(old){
+ game=old;game.meta=meta();refreshEquipmentStats();$('creator').style.display='none';
+ log('Saved cycle restored.','good');render();
+}else if(localStorage.getItem('dragonRealmSave')){
+ discardBrokenRun();
+}else{
+ const m=meta();$('dragonKills').textContent=m.kills;$('legacy').textContent=m.legacy;
+}
+setInterval(()=>{if(game){respawnEnemies();save();render()}},5000);
+</script>
+
+<div id="shopPanel" style="display:none;position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:720px;max-height:78vh;overflow:auto;background:#17130e;border:3px solid #c89b52;border-radius:12px;box-shadow:0 18px 60px #000c;z-index:50;padding:18px;color:#f4e5c2;font-family:Georgia,serif">
+ <div style="display:flex;justify-content:space-between;align-items:center"><h2 style="margin:0;color:#ffd27a">🏪 Town Shop</h2><button onclick="closeShop()">Close</button></div>
+ <div id="shopContent" style="margin-top:12px"></div>
+</div>
+
+</body>
+</html>
